@@ -12,6 +12,8 @@ const EMAIL_USER = (process.env.EMAIL_USER || "").trim();
 const EMAIL_PASS = (process.env.EMAIL_PASS || "").replace(/\s+/g, "");
 const EMAIL_TO = (process.env.EMAIL_TO || EMAIL_USER).trim();
 
+const QUALIFICATIONS = ["10th", "12th", "ITI", "Diploma", "Any Graduate"];
+
 const SMTP_HOST = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 465;
 const SMTP_SECURE = process.env.SMTP_SECURE
@@ -89,6 +91,11 @@ app.post("/api/apply", async (req, res) => {
             ? body.mobile.trim()
             : String(body.mobile ?? "").trim();
 
+    const qualification =
+        typeof body.qualification === "string"
+            ? body.qualification.trim()
+            : "";
+
     if (!name) {
         return res.status(400).json({
             message: "Please enter your full name.",
@@ -117,6 +124,20 @@ app.post("/api/apply", async (req, res) => {
         });
     }
 
+    if (!qualification) {
+        return res.status(400).json({
+            message: "Please select your qualification.",
+            field: "qualification",
+        });
+    }
+
+    if (!QUALIFICATIONS.includes(qualification)) {
+        return res.status(400).json({
+            message: "Please select a valid qualification.",
+            field: "qualification",
+        });
+    }
+
     if (!transporter) {
         console.error(
             "Email is not configured. Set EMAIL_USER, EMAIL_PASS, and EMAIL_TO in backend/.env"
@@ -135,6 +156,7 @@ app.post("/api/apply", async (req, res) => {
 
     const safeName = escapeHtml(name);
     const safeMobile = escapeHtml(mobile);
+    const safeQualification = escapeHtml(qualification);
     const subjectName = name.replace(/[\r\n]+/g, " ");
 
     try {
@@ -147,6 +169,7 @@ app.post("/api/apply", async (req, res) => {
                 "",
                 `Name: ${name}`,
                 `Mobile: ${mobile}`,
+                `Qualification: ${qualification}`,
                 `Received: ${appliedAt}`,
             ].join("\n"),
             html: `
@@ -154,6 +177,7 @@ app.post("/api/apply", async (req, res) => {
                     <h2 style="margin: 0 0 12px;">New Job Application</h2>
                     <p style="margin: 0 0 8px;"><strong>Name:</strong> ${safeName}</p>
                     <p style="margin: 0 0 8px;"><strong>Mobile:</strong> ${safeMobile}</p>
+                    <p style="margin: 0 0 8px;"><strong>Qualification:</strong> ${safeQualification}</p>
                     <p style="margin: 16px 0 0; color: #666;"><strong>Received:</strong> ${escapeHtml(appliedAt)}</p>
                 </div>
             `,
@@ -165,7 +189,7 @@ app.post("/api/apply", async (req, res) => {
 
         return res.status(200).json({
             message: "Application submitted successfully!",
-            applicant: { name, mobile },
+            applicant: { name, mobile, qualification },
         });
     } catch (error) {
         console.error("Failed to send application email.");
