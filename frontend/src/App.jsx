@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import "./App.css";
 
 const API_BASE_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
+  import.meta.env.VITE_API_URL || "https://job-vacancy-website-1.onrender.com"
 ).replace(/\/+$/, "");
 
 const QUALIFICATIONS = ["10th", "12th", "ITI", "Diploma", "Any Graduate"];
